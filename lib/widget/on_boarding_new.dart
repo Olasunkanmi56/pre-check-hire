@@ -13,7 +13,7 @@ class OnboardingCardNew extends StatelessWidget {
   final Color bgColor;
 
   const OnboardingCardNew({
-    Key? key,
+    super.key,
     required this.imagePath,
     required this.title,
     this.description,
@@ -22,7 +22,7 @@ class OnboardingCardNew extends StatelessWidget {
     required this.pageController,
     required this.pageCount,
     required this.bgColor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

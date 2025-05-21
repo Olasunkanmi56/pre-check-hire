@@ -14,7 +14,7 @@ class BlacklistHelpCenterScreen extends StatefulWidget {
 
 class _BlacklistHelpCenterScreenState extends State<BlacklistHelpCenterScreen> {
   int selectedTab = 0;
-  List<bool> _expanded = List.generate(5, (index) => false);
+  final List<bool> _expanded = List.generate(5, (index) => false);
 
   @override
   Widget build(BuildContext context) {

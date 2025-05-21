@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:precheck_hire/screens/employer_screens/employer_navigation_menu.dart';
-import 'package:precheck_hire/screens/employer_screens/home_navigator.dart';
+import 'package:precheck_hire/models/notification.model.dart';
+import 'package:precheck_hire/store/modules/miscellaneous.module.dart';
+import 'package:intl/intl.dart';
 
 class EmployerNotificationScreen extends StatefulWidget {
   const EmployerNotificationScreen({super.key});
@@ -14,93 +15,62 @@ class EmployerNotificationScreen extends StatefulWidget {
 class _EmployerNotificationScreenState
     extends State<EmployerNotificationScreen> {
   int selectedTab = 0;
-
-  final List<Map<String, dynamic>> notifications = [
-    {
-      "title":
-          "Your candidate profile 'Quadri Fashola' has been updated successfully.",
-      "date": "21 days ago",
-      "description":
-          "Your candidate profile was updated with the latest credentials and qualifications.",
-      "icon": Icons.check_circle_outline,
-      "color": Colors.blue,
-      "read": true,
-    },
-    {
-      "title": "You have received a job offer.",
-      "date": "21 days ago",
-      "description": "You received a job offer for a Senior Housekeeper role.",
-      "icon": Icons.check_circle_outline,
-      "color": Colors.green,
-      "read": true,
-    },
-    {
-      "title": "Your Profile has been blacklisted.",
-      "date": "21 days ago",
-      "description":
-          "Your profile has been blacklisted due to unverified information.",
-      "icon": Icons.cancel_outlined,
-      "color": Colors.red,
-      "read": false,
-    },
-    {
-      "title": "You have received a new recommendation.",
-      "date": "21 days ago",
-      "description": "A previous employer has submitted a new recommendation.",
-      "icon": Icons.check_circle_outline,
-      "color": Colors.blue,
-      "read": false,
-    },
-  ];
-
-  late List<bool> _expandedStates;
-
-  List<Map<String, dynamic>> get filteredNotifications {
-    return selectedTab == 0
-        ? notifications
-        : notifications.where((n) => (n["read"] ?? false) == false).toList();
-  }
-
-  void _updateExpandedState() {
-    _expandedStates = List<bool>.filled(filteredNotifications.length, false);
-  }
+  List<UserNotification> allNotifications = [];
+  List<UserNotification> displayedNotifications = [];
+  List<bool> _expandedStates = [];
+  String searchQuery = '';
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _updateExpandedState();
+    loadNotifications();
+  }
+
+  Future<void> loadNotifications() async {
+    try {
+      final service = MiscellaneousModule();
+      final notifications = await service.fetchUserNotifications();
+      setState(() {
+        allNotifications = notifications;
+        applyFilters();
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      // Optionally show error UI
+    }
+  }
+
+  void applyFilters() {
+    final filtered = selectedTab == 0
+        ? allNotifications
+        : allNotifications.where((n) => !n.read).toList();
+
+    if (searchQuery.isNotEmpty) {
+      displayedNotifications = filtered
+          .where((n) => n.message.toLowerCase().contains(searchQuery.toLowerCase()))
+          .toList();
+    } else {
+      displayedNotifications = filtered;
+    }
+
+    _expandedStates = List.generate(displayedNotifications.length, (_) => false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentNotifications = filteredNotifications;
-
-    // Ensure the expanded state is always in sync with the list
-    if (_expandedStates.length != currentNotifications.length) {
-      _updateExpandedState();
-    }
-
     return Scaffold(
       backgroundColor: Colors.white,
-      // const Color(0xFFF8F8F8),
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        // elevation: 0,
-        // leading: IconButton(
-        //   onPressed: () {
-        //     Navigator.pushAndRemoveUntil(
-        //       context,
-        //       MaterialPageRoute(
-        //         builder: (context) => const EmployerNavigationMenu(),
-        //       ),
-        //       (route) => false,
-        //     );
-        //   },
-        //   icon: Icon(Icons.arrow_back, color: Colors.black),
-        // ),
-         automaticallyImplyLeading: false,
+        elevation: 0,
+        automaticallyImplyLeading: false,
         title: Padding(
-           padding: EdgeInsets.symmetric(horizontal: 16.w),
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
           child: Text(
             "Notification",
             style: TextStyle(
@@ -111,155 +81,146 @@ class _EmployerNotificationScreenState
           ),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          // color: Color(0xFFE3E3E7),
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 5.h),
-
-          child: Column(
-            children: [
-              Container(
-                height: 55.h,
-                padding: EdgeInsets.all(10.r),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE3E3E7),
-                  borderRadius: BorderRadius.circular(25.r),
-                ),
-                child: Row(
-                  children: [
-                    _tabButton("All Notifications", 0),
-                    _tabButton("Unread (${notifications.where((n) => (n["read"] ?? false) == false).length})", 1),
-                  ],
-                ),
-              ),
-              SizedBox(height: 16.h),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "Search",
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: EdgeInsets.symmetric(vertical: 12.h),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.r),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              SizedBox(height: 16.h),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: currentNotifications.length,
-                  itemBuilder: (context, index) {
-                    final item = currentNotifications[index];
-                    final isExpanded = _expandedStates[index];
-
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _expandedStates[index] = !_expandedStates[index];
-                        });
-                      },
-                      child: Container(
-                        margin: EdgeInsets.only(bottom: 16.h),
-                        padding: EdgeInsets.all(16.r),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 6.r,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Column(
+                children: [
+                  Container(
+                    height: 55.h,
+                    padding: EdgeInsets.all(10.r),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE3E3E7),
+                      borderRadius: BorderRadius.circular(25.r),
+                    ),
+                    child: Row(
+                      children: [
+                        _tabButton("All Notifications", 0),
+                        _tabButton(
+                          "Unread (${allNotifications.where((n) => !n.read).length})",
+                          1,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.all(8.r),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  TextField(
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value;
+                        applyFilters();
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: "Search",
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  Expanded(
+                    child: displayedNotifications.isEmpty
+                        ? const Center(child: Text("No notifications found"))
+                        : ListView.builder(
+                            itemCount: displayedNotifications.length,
+                            itemBuilder: (context, index) {
+                              final item = displayedNotifications[index];
+                              final isExpanded = _expandedStates[index];
+
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _expandedStates[index] = !isExpanded;
+                                  });
+                                },
+                                child: Container(
+                                  margin: EdgeInsets.only(bottom: 16.h),
+                                  padding: EdgeInsets.all(16.r),
                                   decoration: BoxDecoration(
-                                    color: item["color"]?.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    item["icon"],
-                                    color: item["color"],
-                                    size: 20.r,
-                                  ),
-                                ),
-                                SizedBox(width: 12.w),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item["title"] ?? '',
-                                        style: TextStyle(
-                                          fontSize: 11.sp,
-                                          fontWeight: FontWeight.w400,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4.h),
-                                      Text(
-                                        item["date"] ?? '',
-                                        style: TextStyle(
-                                          fontSize: 11.sp,
-                                          color: Colors.grey[600],
-                                        ),
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16.r),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: 6.r,
+                                        offset: const Offset(0, 3),
                                       ),
                                     ],
                                   ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(
+                                            item.read ? Icons.notifications : Icons.notifications_active,
+                                            color: item.read ? Colors.grey : Colors.blue,
+                                            size: 24.r,
+                                          ),
+                                          SizedBox(width: 12.w),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  item.message,
+                                                  style: TextStyle(
+                                                    fontSize: 13.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4.h),
+                                                Text(
+                                                  DateFormat('dd MMM yyyy, hh:mm a')
+                                                      .format(item.createdAt),
+                                                  style: TextStyle(
+                                                    fontSize: 11.sp,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Icon(
+                                            isExpanded
+                                                ? Icons.keyboard_arrow_up_rounded
+                                                : Icons.keyboard_arrow_down_rounded,
+                                            size: 22.sp,
+                                            color: Colors.black54,
+                                          ),
+                                        ],
+                                      ),
+                                      if (isExpanded) ...[
+                                        SizedBox(height: 12.h),
+                                        Text(
+                                          item.message,
+                                          style: TextStyle(
+                                            fontSize: 13.sp,
+                                            height: 1.5,
+                                            fontWeight: FontWeight.w400,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                                 ),
-                                Icon(
-                                  isExpanded
-                                      ? Icons.keyboard_arrow_up_rounded
-                                      : Icons.keyboard_arrow_down_rounded,
-                                  size: 22.sp,
-                                  color: Colors.black54,
-                                ),
-                              ],
-                            ),
-                            if (isExpanded) ...[
-                              SizedBox(height: 12.h),
-                              Text(
-                                item["description"] ?? '',
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                  height: 1.5,
-                                  fontWeight: FontWeight.w400,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -270,7 +231,7 @@ class _EmployerNotificationScreenState
         onTap: () {
           setState(() {
             selectedTab = index;
-            _updateExpandedState();
+            applyFilters();
           });
         },
         child: Container(

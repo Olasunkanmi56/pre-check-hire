@@ -1,4 +1,3 @@
-import 'package:precheck_hire/dtos/ibase.dto.dart';
 
 class SignupResponseDto {
   final String status;

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:precheck_hire/screens/employer_screens/employer_navigation_menu.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_offer_detail.dart';
-import 'package:precheck_hire/screens/employer_screens/home_navigator.dart';
 import 'package:precheck_hire/screens/employer_screens/joboffercard.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
@@ -52,6 +50,7 @@ class _EmployerJobOffersScreenState extends State<EmployerJobOffersScreen> {
     int totalPages = (filteredOffers.length / itemsPerPage).ceil();
 
     return Scaffold(
+       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(
           'Job Offers Sent',

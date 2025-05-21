@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:precheck_hire/screens/blacklist_screens/blacklist_kyc_success.dart';
 
 class BlacklistSubmitKYCScreen extends StatefulWidget {
-  const BlacklistSubmitKYCScreen({Key? key}) : super(key: key);
+  const BlacklistSubmitKYCScreen({super.key});
 
   @override
   State<BlacklistSubmitKYCScreen> createState() =>

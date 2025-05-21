@@ -1,4 +1,4 @@
-library flutter_super_state;
+library;
 
 export 'package:precheck_hire/flutter_super_state/lib/src/store.dart' show Store;
 export 'package:precheck_hire/flutter_super_state/lib/src/store_module.dart'

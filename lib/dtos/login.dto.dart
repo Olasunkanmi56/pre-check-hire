@@ -1,5 +1,3 @@
-import 'package:precheck_hire/dtos/ibase.dto.dart';
-
 class LoginDto {
   final String email;
   final String password;
@@ -16,4 +14,3 @@ class LoginDto {
         'password': password,
       };
 }
-

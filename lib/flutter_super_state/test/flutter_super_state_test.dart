@@ -1,14 +1,14 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/flutter_super_state.dart';
+import 'package:precheck_hire/flutter_super_state/lib/flutter_super_state.dart';
 
 class CounterModule extends StoreModule {
   int get counter => _counter;
 
   var _counter = 0;
 
-  CounterModule(Store store) : super(store);
+  CounterModule(Store super.store);
 
   void increment() {
     setState(() {

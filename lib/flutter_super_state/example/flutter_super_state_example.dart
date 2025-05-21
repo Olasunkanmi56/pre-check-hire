@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:precheck_hire/flutter_super_state/lib/src/module_builder.dart';
-import '../lib/src/store.dart';
-import '../lib/src/store_module.dart';
-import '../lib/src/store_provider.dart';
+import 'package:precheck_hire/flutter_super_state/lib/src/store.dart';
+import 'package:precheck_hire/flutter_super_state/lib/src/store_module.dart';
+import 'package:precheck_hire/flutter_super_state/lib/src/store_provider.dart';
 
 class CounterModule extends StoreModule {
   int get counter => _counter;
 
   var _counter = 0;
 
-  CounterModule(Store store) : super(store);
+  CounterModule(Store super.store);
 
   void increment() {
     setState(() {

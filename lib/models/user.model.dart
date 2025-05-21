@@ -6,6 +6,8 @@ class User {
   final String phoneNumber;
   final String address;
   final String role;
+  final String? kycVerificationStatus;
+  final String? profileImageUrl;
 
   User({
     required this.id,
@@ -15,5 +17,23 @@ class User {
     required this.phoneNumber,
     required this.address,
     required this.role,
+    this.kycVerificationStatus,
+    this.profileImageUrl,
   });
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      firstName: json['firstName'],
+      lastName: json['lastName'],
+      email: json['email'],
+      phoneNumber: json['phoneNumber'],
+      address: json['address'],
+      role: json['role'],
+      kycVerificationStatus: json['kycVerificationStatus'],
+      profileImageUrl: json['profileImageUrl'],
+    );
+  }
+
+  bool get kycSubmitted => kycVerificationStatus == 'approved';
 }

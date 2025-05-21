@@ -29,6 +29,7 @@ class _EmployerSignUpScreenState extends State<EmployerSignUpScreen> {
   bool agreeToTerms = false;
   bool showPassword = false;
   bool showConfirmPassword = false;
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -145,67 +146,149 @@ class _EmployerSignUpScreenState extends State<EmployerSignUpScreen> {
                   width: double.infinity,
                   height: 48.h,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      if (_passwordController.text.trim() !=
-                          _confirmPasswordController.text.trim()) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Passwords do not match")),
-                        );
-                        return;
-                      }
+                    // onPressed: () async {
+                    //   if (_passwordController.text.trim() !=
+                    //       _confirmPasswordController.text.trim()) {
+                    //     ScaffoldMessenger.of(context).showSnackBar(
+                    //       SnackBar(content: Text("Passwords do not match")),
+                    //     );
+                    //     return;
+                    //   }
 
-                      if (_formKey.currentState!.validate() && agreeToTerms) {
-                        final signupRequest = SignupRequestDto(
-                          firstName: _firstNameController.text.trim(),
-                          lastName: _lastNameController.text.trim(),
-                          email: _emailController.text.trim(),
-                          phoneNumber: _phoneController.text.trim(),
-                          address: _addressController.text.trim(),
-                          password: _passwordController.text.trim(),
-                          role: "candidate",
-                          subscriptionPlanId: 1,
-                        );
+                    //   if (_formKey.currentState!.validate() && agreeToTerms) {
+                    //     final signupRequest = SignupRequestDto(
+                    //       firstName: _firstNameController.text.trim(),
+                    //       lastName: _lastNameController.text.trim(),
+                    //       email: _emailController.text.trim().toLowerCase(),
+                    //       phoneNumber: _phoneController.text.trim(),
+                    //       address: _addressController.text.trim(),
+                    //       password: _passwordController.text.trim(),
+                    //       role: "candidate",
+                    //       subscriptionPlanId: 1,
+                    //     );
 
-                        try {
-                          // optional: setState(() => _isLoading = true);
-                          await authStore.signup(signupRequest);
-                          print("Signed up successfully");
-                          print("Confirm: '${_confirmPasswordController.text}'");
+                    //     try {
+                    //       await authStore.signup(signupRequest);
+                    //       print("Signed up successfully");
 
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) =>
-                                      const EmployerEmailVerificationScreen(),
-                            ),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Signup failed, please try again."),
-                            ),
-                          );
-                          print("Signup error: $e"); // Log the detailed error
-                        } finally {
-                          // optional: setState(() => _isLoading = false);
-                        }
-                      }
-                    },
+                    //       await authStore.sendVerificationEmail(
+                    //         _emailController.text.trim(),
+                    //       );
+
+                    //       Navigator.pushReplacement(
+                    //         context,
+                    //         MaterialPageRoute(
+                    //           builder:
+                    //               (context) => EmployerEmailVerificationScreen(
+                    //                 email: _emailController.text.trim(),
+                    //               ),
+                    //         ),
+                    //       );
+                    //     } catch (e) {
+                    //       ScaffoldMessenger.of(context).showSnackBar(
+                    //         SnackBar(
+                    //           content: Text("Signup failed, please try again."),
+                    //         ),
+                    //       );
+                    //       print("Signup error: $e"); // Log the detailed error
+                    //     }
+                    //   }
+                    // },
+                    onPressed:
+                        isLoading
+                            ? null
+                            : () async {
+                              if (!_formKey.currentState!.validate()) return;
+
+                              if (!agreeToTerms) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "Please accept Terms and Conditions",
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setState(() {
+                                isLoading = true;
+                              });
+
+                              final signupRequest = SignupRequestDto(
+                                firstName: _firstNameController.text.trim(),
+                                lastName: _lastNameController.text.trim(),
+                                email:
+                                    _emailController.text.trim().toLowerCase(),
+                                phoneNumber: _phoneController.text.trim(),
+                                address: _addressController.text.trim(),
+                                password: _passwordController.text.trim(),
+                                role: "candidate",
+                                subscriptionPlanId: 1,
+                              );
+
+                              try {
+                                await authStore.signup(signupRequest);
+                                await authStore.sendVerificationEmail(
+                                  _emailController.text.trim(),
+                                );
+
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => EmployerEmailVerificationScreen(
+                                          email: _emailController.text.trim(),
+                                        ),
+                                  ),
+                                );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "Signup failed, please try again.",
+                                    ),
+                                  ),
+                                );
+                              } finally {
+                                setState(() {
+                                  isLoading = false;
+                                });
+                              }
+                            },
+
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3B82F6),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
-                    child: Text(
-                      'Sign up',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
+                    // child: Text(
+                    //   'Sign up',
+                    //   style: TextStyle(
+                    //     fontSize: 16.sp,
+                    //     fontWeight: FontWeight.w600,
+                    //     color: Colors.white,
+                    //   ),
+                    // ),
+                    child:
+                        isLoading
+                            ? SizedBox(
+                              width: 20.w,
+                              height: 20.w,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : Text(
+                              'Sign up',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
                   ),
                 ),
 
@@ -257,46 +340,73 @@ class _EmployerSignUpScreenState extends State<EmployerSignUpScreen> {
     );
   }
 
-  Widget _buildLabeledField({
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-  }) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
-          ),
-          SizedBox(height: 6.h),
-          TextFormField(
-            controller: controller, // <-- here
-            decoration: InputDecoration(
-              hintText: hint,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 12.w,
-                vertical: 14.h,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
-                borderSide: BorderSide(color: Colors.grey),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
-                borderSide: BorderSide(color: Colors.grey),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
+Widget _buildLabeledField({
+  required String label,
+  required String hint,
+  required TextEditingController controller,
+}) {
+  return Padding(
+    padding: EdgeInsets.only(bottom: 12.h),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+        ),
+        SizedBox(height: 6.h),
+        TextFormField(
+          controller: controller,
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return '$label is required';
+            }
+
+            if (label == 'First name' || label == 'Last name') {
+              if (!RegExp(r'^[a-zA-Z]+$').hasMatch(value.trim())) {
+                return '$label should contain only letters';
+              }
+            }
+
+            if (label == 'Email') {
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                  .hasMatch(value.trim())) {
+                return 'Enter a valid email address';
+              }
+            }
+
+            if (label == 'Phone Number') {
+              if (!RegExp(r'^\d{9,}$').hasMatch(value.trim())) {
+                return 'Enter a valid phone number (at least 9 digits)';
+              }
+            }
+
+            return null;
+          },
+          decoration: InputDecoration(
+            hintText: hint,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 12.w,
+              vertical: 14.h,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.r),
+              borderSide: BorderSide(color: Colors.grey),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.r),
+              borderSide: BorderSide(color: Colors.grey),
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.r),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildPasswordField({
     required String label,
@@ -316,11 +426,21 @@ class _EmployerSignUpScreenState extends State<EmployerSignUpScreen> {
           ),
           SizedBox(height: 6.h),
           TextFormField(
-            controller: controller, // <-- here
+            controller: controller,
             obscureText: !isVisible,
-            autocorrect: false,
-            enableSuggestions: false,
-            textCapitalization: TextCapitalization.none,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return '$label is required';
+              }
+              if (!isConfirm && value.trim().length < 6) {
+                return 'Password must be at least 6 characters';
+              }
+              if (isConfirm &&
+                  value.trim() != _passwordController.text.trim()) {
+                return 'Passwords do not match';
+              }
+              return null;
+            },
             decoration: InputDecoration(
               hintText: 'Enter your password',
               suffixIcon: IconButton(

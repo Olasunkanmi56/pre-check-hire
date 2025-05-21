@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:precheck_hire/screens/employer_screens/joboffercard.dart';
-import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_domestic_jobs.dart';
 
 class JobSeekerHomeScreen extends StatefulWidget {
   const JobSeekerHomeScreen({super.key});

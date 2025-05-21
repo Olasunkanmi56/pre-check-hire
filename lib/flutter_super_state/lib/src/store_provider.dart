@@ -14,11 +14,10 @@ class StoreProvider extends InheritedWidget {
   final Store _store;
 
   const StoreProvider({
-    Key? key,
-    required Widget child,
+    super.key,
+    required super.child,
     required Store store,
-  })  : _store = store,
-        super(key: key, child: child);
+  })  : _store = store;
 
   static StoreProvider? of(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<StoreProvider>();

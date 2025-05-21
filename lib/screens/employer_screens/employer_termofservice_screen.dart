@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class EmployerTermsOfServiceScreen extends StatelessWidget {
-  const EmployerTermsOfServiceScreen({Key? key}) : super(key: key);
+  const EmployerTermsOfServiceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

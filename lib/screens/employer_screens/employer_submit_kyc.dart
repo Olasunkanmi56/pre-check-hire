@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_kyc_success.dart';
+import 'package:precheck_hire/services/auth_service.dart';
+import 'package:precheck_hire/store/modules/miscellaneous.module.dart';
 
 class EmployerSubmitKYCScreen extends StatefulWidget {
-  const EmployerSubmitKYCScreen({Key? key}) : super(key: key);
+  const EmployerSubmitKYCScreen({super.key});
 
   @override
   State<EmployerSubmitKYCScreen> createState() =>
@@ -15,15 +17,41 @@ class EmployerSubmitKYCScreen extends StatefulWidget {
 
 class _EmployerSubmitKYCScreenState extends State<EmployerSubmitKYCScreen> {
   final _formKey = GlobalKey<FormState>();
+  final identityNumberController = TextEditingController();
 
   // Mock data
-  String selectedIdType = 'NIN';
-  final List<String> idTypes = [
-    'NIN',
-    'Passport',
-    'Driver License',
-    'Voter ID',
-  ];
+  List<Map<String, dynamic>> idTypes = [];
+  Map<String, dynamic>? selectedIdType;
+
+  bool isLoading = true;
+
+  @override
+  void dispose() {
+    identityNumberController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchIdentityTypes();
+  }
+
+  void fetchIdentityTypes() async {
+    try {
+      idTypes =
+          await MiscellaneousModule()
+              .getIdentityTypes(); // Should return List<Map<String, dynamic>>
+      if (idTypes.isNotEmpty) {
+        selectedIdType = idTypes.first;
+      }
+
+      setState(() => isLoading = false);
+    } catch (e) {
+      setState(() => isLoading = false);
+      print('Error fetching identity types: $e');
+    }
+  }
 
   DateTime? issueDate;
   DateTime? expiryDate;
@@ -82,6 +110,7 @@ class _EmployerSubmitKYCScreenState extends State<EmployerSubmitKYCScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         // White background + no elevation for a clean look
         backgroundColor: Colors.white,
@@ -144,13 +173,13 @@ class _EmployerSubmitKYCScreenState extends State<EmployerSubmitKYCScreen> {
                     borderRadius: BorderRadius.circular(8.r),
                     border: Border.all(color: Colors.grey.shade400),
                   ),
-                  child: DropdownButtonFormField<String>(
+                  child: DropdownButtonFormField<Map<String, dynamic>>(
                     value: selectedIdType,
                     items:
-                        idTypes.map((String type) {
-                          return DropdownMenuItem<String>(
-                            value: type,
-                            child: Text(type),
+                        idTypes.map((typeMap) {
+                          return DropdownMenuItem<Map<String, dynamic>>(
+                            value: typeMap,
+                            child: Text(typeMap['name']),
                           );
                         }).toList(),
                     onChanged: (val) {
@@ -163,7 +192,7 @@ class _EmployerSubmitKYCScreenState extends State<EmployerSubmitKYCScreen> {
 
                 // Identity Number
                 _buildLabel("Identity Number"),
-                _buildTextFormField("e.g 123456789"),
+                _buildTextFormField("e.g 123456789", identityNumberController),
 
                 // Issue Date
                 _buildLabel("Issue Date"),
@@ -209,32 +238,69 @@ class _EmployerSubmitKYCScreenState extends State<EmployerSubmitKYCScreen> {
                   width: double.infinity,
                   height: 48.h,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // if (_formKey.currentState?.validate() != true) return;
+                    onPressed: () async {
+                      if (!_formKey.currentState!.validate()) return;
 
-                      // if (frontImagePath == null || backImagePath == null) {
-                      //   ScaffoldMessenger.of(context).showSnackBar(
-                      //     const SnackBar(
-                      //       content: Text(
-                      //         "Please upload both front and back images.",
-                      //       ),
-                      //       backgroundColor: Colors.red,
-                      //     ),
-                      //   );
-                      //   return;
-                      // }
+                      if (frontImagePath == null || backImagePath == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Please select both front and back identity images.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
 
-                      // Proceed with submission
-                      //  Submit KYC data
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const EmployerKycSuccessScreen(),
-                        ),
-                      );
+                      if (issueDate == null || expiryDate == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Please select issue and expiry dates.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
 
-                      //  _showVerificationDialog();
+                      // Show loading dialog
+                      _showVerificationDialog();
+
+                      try {
+                        final authService =
+                            AuthService(); // Adjust if using dependency injection
+                        await authService.submitKYC(
+                          identityTypeId: selectedIdType!['id'],
+                          identityNumber: identityNumberController.text.trim(),
+                          identityIssueDate: issueDate!,
+                          identityExpiryDate: expiryDate!,
+                          identityImageFrontPath: frontImagePath!,
+                          identityImageBackPath: backImagePath!,
+                        );
+
+                        if (mounted) {
+                          Navigator.pop(context); // Close the dialog
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const EmployerKycSuccessScreen(),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          Navigator.pop(context); // Close the dialog
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Submission failed: ${e.toString()}',
+                              ),
+                            ),
+                          );
+                        }
+                      }
                     },
+
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3B82F6),
                       shape: RoundedRectangleBorder(
@@ -272,32 +338,43 @@ class _EmployerSubmitKYCScreenState extends State<EmployerSubmitKYCScreen> {
   }
 
   // Basic TextFormField
-  Widget _buildTextFormField(String hint) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 16.h),
-      child: TextFormField(
-        decoration: InputDecoration(
-          hintText: hint,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.r),
-            borderSide: BorderSide(color: Colors.grey),
-          ),
-
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.r),
-            borderSide: BorderSide(
-              color: const Color.fromARGB(255, 139, 138, 138),
-            ), // stays grey even when focused
-          ),
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 12.w,
-            vertical: 14.h,
-          ),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+  Widget _buildTextFormField(String hint, TextEditingController controller) {
+  return Padding(
+    padding: EdgeInsets.only(bottom: 16.h),
+    child: TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      maxLength: 11, // Optional: enforces length in UI
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'Identity number is required';
+        }
+        if (value.trim().length > 11) {
+          return 'Identity number must not exceed 11 digits';
+        }
+        if (!RegExp(r'^\d+$').hasMatch(value.trim())) {
+          return 'Only numeric digits are allowed';
+        }
+        return null;
+      },
+      decoration: InputDecoration(
+        hintText: hint,
+        counterText: '', // hides character counter if using maxLength
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.r),
+          borderSide: BorderSide(color: Colors.grey),
         ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.r),
+          borderSide: BorderSide(color: const Color.fromARGB(255, 139, 138, 138)),
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   // Date Picker
   Widget _buildDatePickerField({

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_application_screen.dart';
-import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_home.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_navigator.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_notification.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_profile.dart';

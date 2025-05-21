@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:precheck_hire/dtos/signup_request_dto.dart';
 import 'package:precheck_hire/screens/blacklist_screens/blacklist_email_verification.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_login.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_termofservice_screen.dart';
+import 'package:precheck_hire/store/modules/user.module.dart';
 
 class BlacklistSignUpScreen extends StatefulWidget {
   const BlacklistSignUpScreen({super.key});
@@ -12,8 +14,18 @@ class BlacklistSignUpScreen extends StatefulWidget {
   State<BlacklistSignUpScreen> createState() => _BlacklistSignUpScreenState();
 }
 
+final TextEditingController _firstNameController = TextEditingController();
+final TextEditingController _lastNameController = TextEditingController();
+final TextEditingController _emailController = TextEditingController();
+final TextEditingController _phoneController = TextEditingController();
+final TextEditingController _addressController = TextEditingController();
+final TextEditingController _passwordController = TextEditingController();
+final TextEditingController _confirmPasswordController =
+    TextEditingController();
+
 class _BlacklistSignUpScreenState extends State<BlacklistSignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+  final AuthStore authStore = AuthStore();
   bool agreeToTerms = false;
   bool showPassword = false;
   bool showConfirmPassword = false;
@@ -48,12 +60,36 @@ class _BlacklistSignUpScreenState extends State<BlacklistSignUpScreen> {
                 ),
                 SizedBox(height: 24.h),
 
-                _buildLabeledField(label: "First name", hint: "First Name"),
-                _buildLabeledField(label: "Last name", hint: "Last name"),
-                _buildLabeledField(label: "Email", hint: "you@example.com"),
-                _buildLabeledField(label: "Phone Number", hint: "08123456789"),
-                _buildPasswordField(label: "Password", isConfirm: false),
-                _buildPasswordField(label: "Confirm Password", isConfirm: true),
+                _buildLabeledField(
+                  label: "First name",
+                  hint: "First Name",
+                  controller: _firstNameController,
+                ),
+                _buildLabeledField(
+                  label: "Last name",
+                  hint: "Last name",
+                  controller: _lastNameController,
+                ),
+                _buildLabeledField(
+                  label: "Email",
+                  hint: "you@example.com",
+                  controller: _emailController,
+                ),
+                _buildLabeledField(
+                  label: "Phone Number",
+                  hint: "08123456789",
+                  controller: _phoneController,
+                ),
+                _buildPasswordField(
+                  label: "Password",
+                  isConfirm: false,
+                  controller: _passwordController,
+                ),
+                _buildPasswordField(
+                  label: "Confirm Password",
+                  isConfirm: true,
+                  controller: _confirmPasswordController,
+                ),
 
                 SizedBox(height: 12.h),
                 Row(
@@ -104,17 +140,51 @@ class _BlacklistSignUpScreenState extends State<BlacklistSignUpScreen> {
                   width: double.infinity,
                   height: 48.h,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate() && agreeToTerms) {
-                        // Sign up logic
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                    const BlacklistEmailVerificationScreen(),
-                          ),
+                    onPressed: () async {
+                      if (_passwordController.text.trim() !=
+                          _confirmPasswordController.text.trim()) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Passwords do not match")),
                         );
+                        return;
+                      }
+
+                      if (_formKey.currentState!.validate() && agreeToTerms) {
+                        final signupRequest = SignupRequestDto(
+                          firstName: _firstNameController.text.trim(),
+                          lastName: _lastNameController.text.trim(),
+                          email: _emailController.text.trim().toLowerCase(),
+                          phoneNumber: _phoneController.text.trim(),
+                          password: _passwordController.text.trim(),
+                          role: "candidate",
+                          subscriptionPlanId: 1,
+                        );
+
+                        try {
+                          await authStore.signup(signupRequest);
+                          print("Signed up successfully");
+
+                          await authStore.sendVerificationEmail(
+                            _emailController.text.trim(),
+                          );
+
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => BlacklistEmailVerificationScreen(
+                                    email: _emailController.text.trim(),
+                                  ),
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Signup failed, please try again."),
+                            ),
+                          );
+                          print("Signup error: $e"); // Log the detailed error
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -182,7 +252,11 @@ class _BlacklistSignUpScreenState extends State<BlacklistSignUpScreen> {
     );
   }
 
-  Widget _buildLabeledField({required String label, required String hint}) {
+  Widget _buildLabeledField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+  }) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Column(
@@ -194,6 +268,7 @@ class _BlacklistSignUpScreenState extends State<BlacklistSignUpScreen> {
           ),
           SizedBox(height: 6.h),
           TextFormField(
+            controller: controller,
             decoration: InputDecoration(
               hintText: hint,
               contentPadding: EdgeInsets.symmetric(
@@ -221,7 +296,11 @@ class _BlacklistSignUpScreenState extends State<BlacklistSignUpScreen> {
     );
   }
 
-  Widget _buildPasswordField({required String label, required bool isConfirm}) {
+  Widget _buildPasswordField({
+    required String label,
+    required bool isConfirm,
+    required TextEditingController controller,
+  }) {
     final isVisible = isConfirm ? showConfirmPassword : showPassword;
 
     return Padding(
@@ -235,6 +314,7 @@ class _BlacklistSignUpScreenState extends State<BlacklistSignUpScreen> {
           ),
           SizedBox(height: 6.h),
           TextFormField(
+            controller: controller,
             obscureText: !isVisible,
             decoration: InputDecoration(
               hintText: 'Enter your password',

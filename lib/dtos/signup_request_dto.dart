@@ -1,4 +1,3 @@
-import 'package:precheck_hire/dtos/ibase.dto.dart';
 
 class SignupRequestDto {
   final String firstName;
@@ -6,7 +5,7 @@ class SignupRequestDto {
   final String phoneNumber;
   final String email;
   final String password;
-  final String address;
+  final String? address;
   final String role;
   final int subscriptionPlanId;
 
@@ -16,7 +15,7 @@ class SignupRequestDto {
     required this.phoneNumber,
     required this.email,
     required this.password,
-    required this.address,
+     this.address,
     required this.role,
     required this.subscriptionPlanId,
   });

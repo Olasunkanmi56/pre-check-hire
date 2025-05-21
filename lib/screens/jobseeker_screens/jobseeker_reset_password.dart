@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:precheck_hire/screens/employer_screens/employer_login.dart';
+import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_login.dart';
+import 'package:precheck_hire/services/auth_service.dart';
 
 class JobSeekerResetPasswordScreen extends StatefulWidget {
-  const JobSeekerResetPasswordScreen({super.key});
+  final String email;
+
+  const JobSeekerResetPasswordScreen({
+    super.key,
+    required this.email,
+  });
 
   @override
   State<JobSeekerResetPasswordScreen> createState() =>
@@ -16,6 +22,12 @@ class _JobSeekerResetPasswordScreenState
   final _formKey = GlobalKey<FormState>();
   bool showPassword = false;
   bool showConfirmPassword = false;
+
+  final AuthService _authService = AuthService();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  final TextEditingController _tokenController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -47,27 +59,63 @@ class _JobSeekerResetPasswordScreenState
                 ),
                 SizedBox(height: 24.h),
                 Text(
-                  'Please enter your new password and input thegenerated token..',
+                  'Please enter your new password and the token sent to your email.',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
                 SizedBox(height: 24.h),
-                _buildLabeledField(label: "Token", hint: "123456"),
-                _buildLabeledField(label: "Email", hint: "you@example.com"),
+                _buildLabeledField(
+                    label: "Token",
+                    hint: "Enter the token sent to your email"),
+                _buildLabeledField(label: "Email", hint: widget.email),
                 _buildPasswordField(label: "Password", isConfirm: false),
                 _buildPasswordField(label: "Confirm Password", isConfirm: true),
-                // SizedBox(height: 5.h),
-
                 SizedBox(height: 16.h),
                 SizedBox(
                   width: double.infinity,
                   height: 48.h,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        // Sign up logic
+                        if (_passwordController.text ==
+                            _confirmPasswordController.text) {
+                          try {
+                            await _authService.resetPassword(
+                              email: widget.email,
+                              token: _tokenController.text,
+                              password: _passwordController.text,
+                              confirmPassword: _confirmPasswordController.text,
+                            );
+                            // Show success message or navigate to login screen
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Password reset successful!"),
+                              ),
+                            );
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const JobSeekerLoginScreen(),
+                              ),
+                            );
+                          } catch (e) {
+                            // Show error message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(e.toString()),
+                              ),
+                            );
+                          }
+                        } else {
+                          // Show error: passwords do not match
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Passwords do not match!"),
+                            ),
+                          );
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -86,7 +134,6 @@ class _JobSeekerResetPasswordScreenState
                     ),
                   ),
                 ),
-
                 SizedBox(height: 16.h),
                 GestureDetector(
                   onTap: () {
@@ -107,18 +154,16 @@ class _JobSeekerResetPasswordScreenState
                             fontWeight: FontWeight.w500,
                             color: Color(0XFFFB0206),
                           ),
-                          recognizer:
-                              TapGestureRecognizer()
-                                ..onTap = () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              const EmployerLoginScreen(),
-                                    ),
-                                  );
-                                },
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const JobSeekerLoginScreen(),
+                                ),
+                              );
+                            },
                         ),
                       ],
                     ),
@@ -145,6 +190,11 @@ class _JobSeekerResetPasswordScreenState
           ),
           SizedBox(height: 6.h),
           TextFormField(
+            controller: label == 'Email'
+                ? TextEditingController(text: widget.email)
+                : label == 'Token'
+                    ? _tokenController
+                    : null,
             decoration: InputDecoration(
               hintText: hint,
               contentPadding: EdgeInsets.symmetric(
@@ -155,12 +205,11 @@ class _JobSeekerResetPasswordScreenState
                 borderRadius: BorderRadius.circular(8.r),
                 borderSide: BorderSide(color: Colors.grey),
               ),
-
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.r),
                 borderSide: BorderSide(
                   color: const Color.fromARGB(255, 139, 138, 138),
-                ), // stays grey even when focused
+                ),
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.r),
@@ -186,6 +235,9 @@ class _JobSeekerResetPasswordScreenState
           ),
           SizedBox(height: 6.h),
           TextFormField(
+            controller: isConfirm
+                ? _confirmPasswordController
+                : _passwordController,
             obscureText: !isVisible,
             decoration: InputDecoration(
               hintText: 'Enter your password',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:precheck_hire/services/auth_service.dart';
 
 class EmployerSecurityScreen extends StatefulWidget {
   const EmployerSecurityScreen({super.key});
@@ -13,6 +14,51 @@ class _EmployerSecurityScreenState extends State<EmployerSecurityScreen> {
   bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
+
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _resetPassword() async {
+    final currentPassword = _currentPasswordController.text.trim();
+    final newPassword = _newPasswordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (newPassword != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("New password and confirmation do not match")),
+      );
+      return;
+    }
+
+    try {
+      final response = await AuthService().changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
+      );
+      
+
+      if (response.data['status'] == 'success') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Password updated successfully")),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to update password: ${e.toString()}")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +83,7 @@ class _EmployerSecurityScreenState extends State<EmployerSecurityScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(height: 20.h),
-             SvgPicture.asset(
+            SvgPicture.asset(
               'assets/icons/padlock.svg',
               width: 60.w,
               height: 75.w,
@@ -50,6 +96,7 @@ class _EmployerSecurityScreenState extends State<EmployerSecurityScreen> {
               obscure: _obscureCurrent,
               onToggle:
                   () => setState(() => _obscureCurrent = !_obscureCurrent),
+              controller: _currentPasswordController,
             ),
             SizedBox(height: 16.h),
 
@@ -57,6 +104,7 @@ class _EmployerSecurityScreenState extends State<EmployerSecurityScreen> {
               label: "New Password",
               obscure: _obscureNew,
               onToggle: () => setState(() => _obscureNew = !_obscureNew),
+            controller:  _newPasswordController,
             ),
             SizedBox(height: 16.h),
 
@@ -65,15 +113,14 @@ class _EmployerSecurityScreenState extends State<EmployerSecurityScreen> {
               obscure: _obscureConfirm,
               onToggle:
                   () => setState(() => _obscureConfirm = !_obscureConfirm),
+                  controller: _confirmPasswordController,
             ),
             SizedBox(height: 30.h),
 
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // Add reset logic here
-                },
+                onPressed: _resetPassword,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3282F6),
                   padding: EdgeInsets.symmetric(vertical: 14.h),
@@ -98,6 +145,7 @@ class _EmployerSecurityScreenState extends State<EmployerSecurityScreen> {
     required String label,
     required bool obscure,
     required VoidCallback onToggle,
+    required TextEditingController controller,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,6 +156,7 @@ class _EmployerSecurityScreenState extends State<EmployerSecurityScreen> {
         ),
         SizedBox(height: 6.h),
         TextFormField(
+          controller: controller,
           obscureText: obscure,
           decoration: InputDecoration(
             hintText: '••••••••',

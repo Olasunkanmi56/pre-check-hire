@@ -1,7 +1,6 @@
-// dtos/login_response_dto.dart
 class LoginResponseDto {
   final String token;
-  final Map<String, dynamic>? user; // or create a UserDto if needed
+  final Map<String, dynamic>? user;
 
   LoginResponseDto({
     required this.token,
@@ -11,7 +10,9 @@ class LoginResponseDto {
   factory LoginResponseDto.fromJson(Map<String, dynamic> json) {
     return LoginResponseDto(
       token: json['token'],
-      user: json['user'], // optional
+      user: json['user'],
     );
   }
+
+  get data => null;
 }

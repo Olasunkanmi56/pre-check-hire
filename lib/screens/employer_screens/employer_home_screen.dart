@@ -1,16 +1,85 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:precheck_hire/models/candidate.model.dart';
+import 'package:precheck_hire/models/categoryhome.model.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_candidate_profile.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_categorylisting_screen.dart';
+import 'package:precheck_hire/screens/employer_screens/employer_workers_listing_screen.dart';
+import 'package:precheck_hire/store/modules/miscellaneous.module.dart';
 import 'package:precheck_hire/widget/worker_profile_card.dart';
 
-class EmployerHomeScreen extends StatelessWidget {
+class EmployerHomeScreen extends StatefulWidget {
   const EmployerHomeScreen({super.key});
+
+  @override
+  State<EmployerHomeScreen> createState() => _EmployerHomeScreenState();
+}
+
+class _EmployerHomeScreenState extends State<EmployerHomeScreen> {
+  List<String> _states = [];
+  List<CategoryHome> _categories = [];
+  List<Candidate> _allCandidates = [];
+  String? _selectedState;
+  bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStates();
+    _fetchCategories();
+    _loadCandidates();
+  }
+
+  Future<void> _loadCandidates() async {
+    try {
+      final candidates = await MiscellaneousModule().fetchAllCandidates();
+      setState(() {
+        _allCandidates = candidates;
+        print("help");
+        print(candidates);
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching candidates: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _fetchCategories() async {
+    try {
+      final categories = await MiscellaneousModule().fetchDomesticCategories();
+      setState(() {
+        _categories =
+            categories
+                .map((cat) => CategoryHome(name: cat.name)) // convert here
+                .toList();
+      });
+    } catch (e) {
+      print('Error fetching categories: $e');
+    }
+  }
+
+  void _fetchStates() async {
+    try {
+      final states = await MiscellaneousModule().getNigeriaStates();
+      setState(() {
+        _states = states;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      // Optionally handle error
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // Background image and greeting
@@ -81,6 +150,7 @@ class EmployerHomeScreen extends StatelessWidget {
               child: Column(
                 children: [
                   TextField(
+                    controller: _searchController,
                     decoration: InputDecoration(
                       prefixIcon: Icon(Icons.search),
                       hintText: "Search for domestic workers",
@@ -101,6 +171,7 @@ class EmployerHomeScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 16.h),
                   DropdownButtonFormField<String>(
+                    value: _selectedState,
                     decoration: InputDecoration(
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 12.w,
@@ -134,7 +205,7 @@ class EmployerHomeScreen extends StatelessWidget {
                     ),
                     dropdownColor: Colors.white,
                     items:
-                        ["Abia", "Adamawa", "Akwa Ibom", "Anambra"]
+                        _states
                             .map(
                               (state) => DropdownMenuItem(
                                 value: state,
@@ -151,12 +222,15 @@ class EmployerHomeScreen extends StatelessWidget {
                             )
                             .toList(),
                     onChanged: (value) {
-                      // Handle selection
+                      setState(() {
+                        _selectedState = value;
+                      });
                     },
                     validator:
                         (value) =>
                             value == null ? 'Please select a location' : null,
                   ),
+
                   SizedBox(height: 20.h),
                   SizedBox(
                     width: double.infinity,
@@ -168,7 +242,21 @@ class EmployerHomeScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12.r),
                         ),
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        final searchText = _searchController.text.trim();
+                        final selectedLocation = _selectedState;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => EmployerExploreCandidatesScreen(
+                                  initialSearchText: searchText,
+                                  initialSelectedState: selectedLocation,
+                                ),
+                          ),
+                        );
+                      },
+
                       child: Text(
                         "Search",
                         style: TextStyle(
@@ -204,25 +292,26 @@ class EmployerHomeScreen extends StatelessWidget {
                     spacing: 5.w,
                     runSpacing: 7.h,
                     children: [
-                      _buildChip("Senior House Keeper", Colors.amber, () {}),
-                      _buildChip("Security Persona", Colors.green, () {}),
-                      _buildChip("Personal Assistant", Colors.orange, () {}),
-                      _buildChip("Chef", Colors.deepPurple, () {}),
-                      _buildChip("Chef", Colors.deepPurple, () {}),
-                      _buildChip("Launderer", Colors.red, () {}),
-                      _buildChip("Launderer", Colors.red, () {}),
-                      _buildChip("Launderer", Colors.red, () {}),
-                      _buildChip("Driver", Colors.pink, () {}),
+                      ..._categories.take(7).map((category) {
+                        return _buildChip(
+                          category.name,
+                          _getColorForCategory(category.name),
+                          () {
+                            // Optional: Navigate or filter workers by this category
+                          },
+                        );
+                      }),
                       _buildChip("See all", Colors.blue, () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => CategoryListingScreen(),
+                            builder: (_) => const CategoryListingScreen(),
                           ),
                         );
                       }),
                     ],
                   ),
+
                   SizedBox(height: 20.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -249,43 +338,75 @@ class EmployerHomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 12.h),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        WorkerCard(
-                          name: "Quadri Fashola",
-                          experience: 4,
-                          imagePath: "assets/images/home/quadri.png",
-                          onViewProfile: () {
-                            // Navigate to profile page
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => EmployerCandidateProfileScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        WorkerCard(
-                          name: "Luca Adams",
-                          experience: 7,
-                          imagePath: "assets/images/home/luca.png",
-                          onViewProfile: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => EmployerCandidateProfileScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                  // SizedBox(height: 6.h),
+                  GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 9.w,
+                    mainAxisSpacing: 9.h,
+                    childAspectRatio: 0.65,
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    children:
+                        _allCandidates.take(2).map((candidate) {
+                          return WorkerCard(
+                            name: candidate.fullName,
+                            experience: candidate.yearsOfExperience ?? 0,
+                            imagePath:
+                                candidate.profileImageUrl ??
+                                'assets/images/default_profile.png',
+                            onViewProfile: () {
+                              if (candidate.id != null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => EmployerCandidateProfileScreen(
+                                          candidateId: candidate.id!,
+                                        ),
+                                  ),
+                                );
+                              }
+                            },
+                          );
+                        }).toList(),
                   ),
+                  // SingleChildScrollView(
+                  //   scrollDirection: Axis.horizontal,
+                  //   // child: Row(
+                  //   //   children: [
+                  //   //     WorkerCard(
+                  //   //       name: "Quadri Fashola",
+                  //   //       experience: 4,
+                  //   //       imagePath: "assets/images/home/quadri.png",
+                  //   //       onViewProfile: () {
+                  //   //         // Navigate to profile page
+                  //   //         Navigator.push(
+                  //   //           context,
+                  //   //           MaterialPageRoute(
+                  //   //             builder:
+                  //   //                 (_) => EmployerCandidateProfileScreen(),
+                  //   //           ),
+                  //   //         );
+                  //   //       },
+                  //   //     ),
+                  //   //     WorkerCard(
+                  //   //       name: "Luca Adams",
+                  //   //       experience: 7,
+                  //   //       imagePath: "assets/images/home/luca.png",
+                  //   //       onViewProfile: () {
+                  //   //         Navigator.push(
+                  //   //           context,
+                  //   //           MaterialPageRoute(
+                  //   //             builder:
+                  //   //                 (_) => EmployerCandidateProfileScreen(),
+                  //   //           ),
+                  //   //         );
+                  //   //       },
+                  //   //     ),
+                  //   //   ],
+                  //   // ),
+
+                  // ),
                 ],
               ),
             ),
@@ -311,5 +432,26 @@ class EmployerHomeScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _getColorForCategory(String name) {
+    switch (name.toLowerCase()) {
+      case 'chef':
+        return Colors.amber;
+      case 'housekeeper':
+        return Colors.green;
+      case 'drivers':
+        return Colors.red;
+      case 'security':
+        return Colors.blue;
+      case 'nanny':
+        return Colors.purple;
+      case 'laundrers':
+        return Colors.orange;
+      case 'Butler':
+        return Colors.pink;
+      default:
+        return Colors.grey;
+    }
   }
 }

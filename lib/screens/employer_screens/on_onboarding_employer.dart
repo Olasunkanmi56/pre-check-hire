@@ -65,7 +65,7 @@ class _OnOboardingEmployerScreenState extends State<OnOboardingEmployerScreen> {
                       ),
                     );
                   },
-                  bgColor: Color(0xFFe2e2e2),
+                  bgColor: Color(0xFFE5e3d4),
                   pageController: _pageController,
                   pageCount: 2,
                 ),

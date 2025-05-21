@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:precheck_hire/screens/employer_screens/employer_pricing_screen.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_job_detail.dart';
-import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_pricing.dart';
 
 class JobSeekerApplicationSucessScreen extends StatelessWidget {
   const JobSeekerApplicationSucessScreen({super.key});

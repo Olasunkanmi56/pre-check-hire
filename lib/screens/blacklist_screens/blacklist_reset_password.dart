@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:precheck_hire/screens/employer_screens/employer_login.dart';
+import 'package:precheck_hire/screens/blacklist_screens/blacklist_login.dart';
+import 'package:precheck_hire/services/auth_service.dart';
 
 class BlacklistResetPasswordScreen extends StatefulWidget {
-  const BlacklistResetPasswordScreen({super.key});
+   final String email;
+  const BlacklistResetPasswordScreen({super.key, required this.email});
+  
 
   @override
   State<BlacklistResetPasswordScreen> createState() =>
@@ -16,6 +19,12 @@ class _BlacklistResetPasswordScreenState
   final _formKey = GlobalKey<FormState>();
   bool showPassword = false;
   bool showConfirmPassword = false;
+
+   final AuthService _authService = AuthService();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  final TextEditingController _tokenController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -47,15 +56,15 @@ class _BlacklistResetPasswordScreenState
                 ),
                 SizedBox(height: 24.h),
                 Text(
-                  'Please enter your new password and input thegenerated token..',
+                  'Please enter your new password and input the generated token..',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
                 SizedBox(height: 24.h),
-                _buildLabeledField(label: "Token", hint: "123456"),
-                _buildLabeledField(label: "Email", hint: "you@example.com"),
+                _buildLabeledField(label: "Token", hint: "Enter the token sent to your email"),
+                _buildLabeledField(label: "Email", hint: widget.email),
                 _buildPasswordField(label: "Password", isConfirm: false),
                 _buildPasswordField(label: "Confirm Password", isConfirm: true),
                 // SizedBox(height: 5.h),
@@ -65,9 +74,45 @@ class _BlacklistResetPasswordScreenState
                   width: double.infinity,
                   height: 48.h,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        // Sign up logic
+                        if (_passwordController.text ==
+                            _confirmPasswordController.text) {
+                          try {
+                            await _authService.resetPassword(
+                              email: widget.email,
+                              token: _tokenController.text,
+                              password: _passwordController.text,
+                              confirmPassword: _confirmPasswordController.text,
+                            );
+                            // Show success message or navigate to login screen
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Password reset successful!"),
+                              ),
+                            );
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const BlacklistLoginScreen(),
+                              ),
+                            );
+                          } catch (e) {
+                            // Show error message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(e.toString()),
+                              ),
+                            );
+                          }
+                        } else {
+                          // Show error: passwords do not match
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Passwords do not match!"),
+                            ),
+                          );
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -115,7 +160,7 @@ class _BlacklistResetPasswordScreenState
                                     MaterialPageRoute(
                                       builder:
                                           (context) =>
-                                              const EmployerLoginScreen(),
+                                              const BlacklistLoginScreen(),
                                     ),
                                   );
                                 },

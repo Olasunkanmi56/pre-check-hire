@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
  import 'package:flutter_svg/flutter_svg.dart';
-import 'package:precheck_hire/screens/employer_screens/employer_home_screen.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_notification_screen.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_profile.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_request_domestic_worker.dart';

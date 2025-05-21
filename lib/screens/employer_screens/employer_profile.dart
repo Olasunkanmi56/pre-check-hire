@@ -4,20 +4,51 @@ import 'package:flutter_svg/svg.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_account_manage_screen.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_help_center_screen.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_jobs_screen.dart';
+import 'package:precheck_hire/screens/employer_screens/employer_login.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_logout.dart';
-import 'package:precheck_hire/screens/employer_screens/employer_navigation_menu.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_notification_screen.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_privacy_policy_screen.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_security_screen.dart';
-import 'package:precheck_hire/screens/employer_screens/home_navigator.dart';
+import 'package:precheck_hire/services/auth_service.dart';
 
-class EmployerProfileScreen extends StatelessWidget {
+class EmployerProfileScreen extends StatefulWidget {
   const EmployerProfileScreen({super.key});
+
+  @override
+  State<EmployerProfileScreen> createState() => _EmployerProfileScreenState();
+}
+
+class _EmployerProfileScreenState extends State<EmployerProfileScreen> {
+
+  String? firstName;
+  String? lastName;
+  String? profileImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserProfile();
+  }
+
+  Future<void> fetchUserProfile() async {
+    try {
+      final profile = await AuthService().getUserProfile();
+      if (!mounted) return;
+      setState(() {
+        firstName = profile['firstName'];
+        lastName = profile['lastName'];
+        profileImageUrl = profile['profileImageUrl'];
+      });
+    } catch (e) {
+      print('Failed to load profile: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -33,9 +64,9 @@ class EmployerProfileScreen extends StatelessWidget {
         //   },
         //   icon: Icon(Icons.arrow_back, color: Colors.black),
         // ),
-         automaticallyImplyLeading: false,
+        automaticallyImplyLeading: false,
         title: Padding(
-           padding: EdgeInsets.symmetric(horizontal: 16.w),
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
           child: Text(
             "Profile",
             style: TextStyle(
@@ -86,27 +117,27 @@ class EmployerProfileScreen extends StatelessWidget {
                         ),
                         child: CircleAvatar(
                           radius: 40.r,
-                          backgroundImage: AssetImage(
-                            "assets/images/home/chisom.png",
-                          ),
+                       backgroundImage: profileImageUrl != null
+                              ? NetworkImage(profileImageUrl!)
+                              : const AssetImage("assets/images/home/chisom.png") as ImageProvider,
                         ),
                       ),
                       SizedBox(height: 10.h),
                       Text(
-                        "Quadri Fashola",
+                        "${firstName ?? ''} ${lastName ?? ''}",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16.sp,
                         ),
                       ),
                       SizedBox(height: 4.h),
-                      Text(
-                        "Domestic category not available",
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 12.sp,
-                        ),
-                      ),
+                      // Text(
+                      //   "Domestic category not available",
+                      //   style: TextStyle(
+                      //     color: Colors.black54,
+                      //     fontSize: 12.sp,
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -175,17 +206,17 @@ class EmployerProfileScreen extends StatelessWidget {
                         );
                       },
                     ),
-                    _optionTile(
-                      "KYC Verification",
-                      Icons.manage_accounts,
-                      onTap: () {
-                        // Navigate or do something
-                        // Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(builder: (_) => EditProfilePage()),
-                        // );
-                      },
-                    ),
+                    // _optionTile(
+                    //   "KYC Verification",
+                    //   Icons.manage_accounts,
+                    //   onTap: () {
+                    //     // Navigate or do something
+                    //     // Navigator.push(
+                    //     //   context,
+                    //     //   MaterialPageRoute(builder: (_) => EditProfilePage()),
+                    //     // );
+                    //   },
+                    // ),
                     _optionTile(
                       "Security",
                       Icons.lock_outline,
@@ -258,9 +289,24 @@ class EmployerProfileScreen extends StatelessWidget {
                       color: Colors.red,
                       iconColor: Colors.red,
                       onTap: () {
-                        EmployerLogoutModal(context, () {
-                          print("User logged out");
-                          // Navigator.pushReplacementNamed(context, '/login');
+                        EmployerLogoutModal(context, () async {
+                          try {
+                            await AuthService().logout();
+
+                            // Navigate to login screen directly and clear navigation stack
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (_) => EmployerLoginScreen()),
+                              (route) => false,
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Logout failed. Please try again.',
+                                ),
+                              ),
+                            );
+                          }
                         });
                       },
                     ),

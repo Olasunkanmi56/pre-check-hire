@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:precheck_hire/screens/employer_screens/employer_offer_detail.dart';
 import 'package:precheck_hire/screens/employer_screens/joboffercard.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_offerdetail.dart';
 
 class JobSeekerEmploymentScreen extends StatefulWidget {
-  const JobSeekerEmploymentScreen({Key? key}) : super(key: key);
+  const JobSeekerEmploymentScreen({super.key});
 
   @override
   State<JobSeekerEmploymentScreen> createState() =>
@@ -207,7 +206,7 @@ class _JobSeekerEmploymentScreenState extends State<JobSeekerEmploymentScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Showing ${currentItems.isEmpty ? 0 : start + 1}-${end} of ${displayedOffers.length}",
+                    "Showing ${currentItems.isEmpty ? 0 : start + 1}-$end of ${displayedOffers.length}",
                     style: TextStyle(fontSize: 12.sp),
                   ),
                   Row(

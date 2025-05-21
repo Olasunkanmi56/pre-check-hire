@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_joboffer_screen.dart';
-import 'package:precheck_hire/screens/employer_screens/employer_manage_jobdetails.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_offer_detail.dart';
 
 class EmployerJobsNavigator extends StatelessWidget {

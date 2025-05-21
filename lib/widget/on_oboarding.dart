@@ -19,7 +19,7 @@ class OnboardingCard extends StatelessWidget {
   final VoidCallback? optionalBtn2Pressed;
 
   const OnboardingCard({
-    Key? key,
+    super.key,
     required this.imagePath,
     required this.title,
     this.description,
@@ -32,7 +32,7 @@ class OnboardingCard extends StatelessWidget {
     this.bottomText,
     this.bottomActionText,
     this.onBottomActionTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

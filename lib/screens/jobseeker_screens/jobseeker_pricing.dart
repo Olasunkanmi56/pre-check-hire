@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:precheck_hire/screens/blacklist_screens/blacklist_pricing_success.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_pricing_success.dart';
 
 class JobSeekerPricingScreen extends StatelessWidget {

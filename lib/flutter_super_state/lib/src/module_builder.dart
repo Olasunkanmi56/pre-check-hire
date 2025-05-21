@@ -89,7 +89,7 @@ class ModuleBuilder<T extends StoreModule> extends StatefulWidget {
   final Widget? child;
 
   const ModuleBuilder({
-    Key? key,
+    super.key,
     this.onInit,
     this.builder,
     this.childBuilder,
@@ -97,8 +97,7 @@ class ModuleBuilder<T extends StoreModule> extends StatefulWidget {
   })  : assert(
           childBuilder != null || builder != null,
           "builder or childBuilder must be set",
-        ),
-        super(key: key);
+        );
 
   @override
   State<ModuleBuilder<T>> createState() => _ModuleBuilderState<T>();

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:precheck_hire/screens/employer_screens/employer_forgot_password.dart';
+import 'package:precheck_hire/dtos/login.dto.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_sing_up.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_forgot_password.dart';
+import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_navigationmenu.dart';
+import 'package:precheck_hire/store/modules/user.module.dart';
+import 'package:provider/provider.dart';
 
 class JobSeekerLoginScreen extends StatefulWidget {
   const JobSeekerLoginScreen({super.key});
@@ -14,9 +17,18 @@ class JobSeekerLoginScreen extends StatefulWidget {
 
 class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool agreeToTerms = false;
   bool showPassword = false;
   bool showConfirmPassword = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,8 +59,16 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen> {
                   ),
                 ),
                 SizedBox(height: 24.h),
-                _buildLabeledField(label: "Email", hint: "you@example.com"),
-                _buildPasswordField(label: "Password", isConfirm: false),
+                _buildLabeledField(
+                  label: "Email",
+                  hint: "you@example.com",
+                  controller: _emailController,
+                ),
+                _buildPasswordField(
+                  label: "Password",
+                  isConfirm: false,
+                  controller: _passwordController,
+                ),
 
                 // SizedBox(height: 5.h),
                 Row(
@@ -100,11 +120,36 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen> {
                   width: double.infinity,
                   height: 48.h,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate() && agreeToTerms) {
-                        // Sign up logic
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
+                        final loginDto = LoginDto(
+                          email: _emailController.text.trim(),
+                          password: _passwordController.text.trim(),
+                          rememberMe: agreeToTerms,
+                        );
+
+                        final authStore = context.read<AuthStore>();
+
+                        try {
+                          await authStore.login(loginDto);
+
+                          if (!mounted) return;
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => JobSeekerNavigationMenu(),
+                            ),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(e.toString())));
+                        }
                       }
                     },
+
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3B82F6),
                       shape: RoundedRectangleBorder(
@@ -170,7 +215,11 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen> {
     );
   }
 
-  Widget _buildLabeledField({required String label, required String hint}) {
+  Widget _buildLabeledField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+  }) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Column(
@@ -182,6 +231,7 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen> {
           ),
           SizedBox(height: 6.h),
           TextFormField(
+            controller: controller,
             decoration: InputDecoration(
               hintText: hint,
               contentPadding: EdgeInsets.symmetric(
@@ -209,7 +259,11 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen> {
     );
   }
 
-  Widget _buildPasswordField({required String label, required bool isConfirm}) {
+  Widget _buildPasswordField({
+    required String label,
+    required bool isConfirm,
+    required TextEditingController controller,
+  }) {
     final isVisible = isConfirm ? showConfirmPassword : showPassword;
 
     return Padding(
@@ -223,6 +277,7 @@ class _JobSeekerLoginScreenState extends State<JobSeekerLoginScreen> {
           ),
           SizedBox(height: 6.h),
           TextFormField(
+            controller: controller,
             obscureText: !isVisible,
             decoration: InputDecoration(
               hintText: 'Enter your password',

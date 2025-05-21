@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:precheck_hire/screens/blacklist_screens/blacklist_reset_password.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_login.dart';
+import 'package:precheck_hire/services/auth_service.dart';
 
 class BlackListForgotPasswordScreen extends StatefulWidget {
   const BlackListForgotPasswordScreen({super.key});
@@ -14,7 +15,10 @@ class BlackListForgotPasswordScreen extends StatefulWidget {
 
 class _BlackListForgotPasswordScreenState
     extends State<BlackListForgotPasswordScreen> {
+  final TextEditingController _emailController = TextEditingController();
+   final AuthService _authService = AuthService();
   final _formKey = GlobalKey<FormState>();
+    bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -53,23 +57,39 @@ class _BlackListForgotPasswordScreenState
                   ),
                 ),
                 SizedBox(height: 24.h),
-                _buildLabeledField(label: "Email", hint: "you@example.com"),
+                _buildLabeledField(label: "Email", hint: "you@example.com",controller: _emailController),
 
                 SizedBox(height: 16.h),
                 SizedBox(
                   width: double.infinity,
                   height: 48.h,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                         Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const BlacklistResetPasswordScreen(),
-                      ),
-                    );
-                      }
-                    },
+                     onPressed: _isLoading
+                        ? null
+                        : () async {
+                            if (_formKey.currentState!.validate()) {
+                              setState(() => _isLoading = true);
+                              try {
+                                await _authService.forgotPassword(_emailController.text.trim());
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Reset token sent to email'),
+                                  ),
+                                );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => BlacklistResetPasswordScreen(email: _emailController.text),
+                                  ),
+                                );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                              } finally {
+                                setState(() => _isLoading = false);
+                              }
+                            }
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3B82F6),
                       shape: RoundedRectangleBorder(
@@ -89,9 +109,7 @@ class _BlackListForgotPasswordScreenState
 
                 SizedBox(height: 16.h),
                 GestureDetector(
-                  onTap: () {
-                    
-                  },
+                  onTap: () {},
                   child: Text.rich(
                     TextSpan(
                       text: 'Remember your password?',
@@ -133,7 +151,7 @@ class _BlackListForgotPasswordScreenState
     );
   }
 
-  Widget _buildLabeledField({required String label, required String hint}) {
+  Widget _buildLabeledField({required String label, required String hint, required TextEditingController controller}) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Column(
@@ -145,6 +163,7 @@ class _BlackListForgotPasswordScreenState
           ),
           SizedBox(height: 6.h),
           TextFormField(
+            controller: controller,
             decoration: InputDecoration(
               hintText: hint,
               contentPadding: EdgeInsets.symmetric(

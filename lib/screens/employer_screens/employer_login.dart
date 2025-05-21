@@ -3,8 +3,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:precheck_hire/dtos/login.dto.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_forgot_password.dart';
+import 'package:precheck_hire/screens/employer_screens/employer_navigation_menu.dart';
+// import 'package:precheck_hire/screens/employer_screens/employer_navigation_menu.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_sing_up.dart';
-import 'package:precheck_hire/services/dto_client.dart';
+import 'package:precheck_hire/screens/employer_screens/employer_submit_kyc.dart';
+import 'package:precheck_hire/store/modules/user.module.dart';
+import 'package:provider/provider.dart';
 
 class EmployerLoginScreen extends StatefulWidget {
   const EmployerLoginScreen({super.key});
@@ -20,6 +24,7 @@ class _EmployerLoginScreenState extends State<EmployerLoginScreen> {
   bool agreeToTerms = false;
   bool showPassword = false;
   bool showConfirmPassword = false;
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -118,37 +123,83 @@ class _EmployerLoginScreenState extends State<EmployerLoginScreen> {
                   width: double.infinity,
                   height: 48.h,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate() && agreeToTerms) {
-                        final loginDto = LoginDto(
-                          email: _emailController.text.trim(),
-                          password: _passwordController.text.trim(),
-                        );
+                    onPressed:
+                        isLoading
+                            ? null
+                            : () async {
+                              if (_formKey.currentState!.validate()) {
+                                setState(() => isLoading = true);
 
-                        try {
-                          final authService = AuthService();
-                          final response = await authService.login(loginDto);
-                          if (!mounted) return;
-                          print("Signed up successfully");
-                          // If successful, navigate or update state
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Login successful')),
-                          );
+                                final loginDto = LoginDto(
+                                  email: _emailController.text.trim(),
+                                  password: _passwordController.text.trim(),
+                                  rememberMe: agreeToTerms,
+                                );
 
-                          // TODO: Navigate to the next screen
-                        } catch (e) {
-                          if (!mounted) return;
-                          final message = e.toString();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                message.isNotEmpty ? message : 'Login failed',
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    },
+                                final authStore = context.read<AuthStore>();
+
+                                try {
+                                  await authStore.login(loginDto);
+
+                                  if (!mounted) return;
+
+                                  // Navigator.push(
+                                  //   context,
+                                  //   MaterialPageRoute(
+                                  //     builder:
+                                  //         (context) =>
+                                  //             const EmployerSubmitKYCScreen(),
+                                  //   ),
+                                  // );
+                                  final user = authStore.user;
+                                  if (user?.kycVerificationStatus == true) {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) =>
+                                                const EmployerNavigationMenu(),
+                                      ),
+                                    );
+                                  } else {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) =>
+                                                const EmployerSubmitKYCScreen(),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (!mounted) return;
+                                  String errorMessage = e.toString();
+                                  // Optional: clean up message for user
+                                  if (errorMessage.contains(
+                                    'Incorrect email or password',
+                                  )) {
+                                    errorMessage =
+                                        'Incorrect email or password';
+                                  } else if (errorMessage.contains(
+                                    'Login error:',
+                                  )) {
+                                    errorMessage = errorMessage.replaceFirst(
+                                      'Exception: Login error: ',
+                                      '',
+                                    );
+                                  }
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(errorMessage),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                } finally {
+                                  if (mounted)
+                                    setState(() => isLoading = false);
+                                }
+                              }
+                            },
 
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3B82F6),
@@ -156,14 +207,24 @@ class _EmployerLoginScreenState extends State<EmployerLoginScreen> {
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
-                    child: Text(
-                      'Sign in',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child:
+                        isLoading
+                            ? SizedBox(
+                              width: 20.w,
+                              height: 20.w,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.white,
+                              ),
+                            )
+                            : Text(
+                              'Sign in',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
                   ),
                 ),
 
@@ -233,7 +294,9 @@ class _EmployerLoginScreenState extends State<EmployerLoginScreen> {
           TextFormField(
             controller: controller,
             validator: (value) {
-              if (value == null || value.isEmpty) return 'Enter your email';
+              if (value == null || value.isEmpty) return 'Email is required';
+              if (!RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$").hasMatch(value))
+                return 'Enter a valid email';
               return null;
             },
             decoration: InputDecoration(
@@ -273,7 +336,12 @@ class _EmployerLoginScreenState extends State<EmployerLoginScreen> {
             controller: controller,
             obscureText: !isVisible,
             validator: (value) {
-              if (value == null || value.isEmpty) return 'Enter your password';
+              if (value == null || value.trim().isEmpty) {
+                return '$label is required';
+              }
+              if (!isConfirm && value.trim().length < 6) {
+                return 'Password must be at least 6 characters';
+              }
               return null;
             },
             decoration: InputDecoration(

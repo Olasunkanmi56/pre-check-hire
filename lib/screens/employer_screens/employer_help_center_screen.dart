@@ -11,7 +11,7 @@ class EmployerHelpCenterScreen extends StatefulWidget {
 
 class _EmployerHelpCenterScreenState extends State<EmployerHelpCenterScreen> {
   int selectedTab = 0;
-  List<bool> _expanded = List.generate(5, (index) => false);
+  final List<bool> _expanded = List.generate(5, (index) => false);
 
   @override
   Widget build(BuildContext context) {

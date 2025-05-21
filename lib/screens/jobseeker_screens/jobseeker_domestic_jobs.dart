@@ -3,6 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:precheck_hire/screens/employer_screens/joboffercard.dart';
 
 class DomesticJobScreen extends StatefulWidget {
+  const DomesticJobScreen({super.key});
+
   @override
   State<DomesticJobScreen> createState() => _DomesticJobScreenState();
 }

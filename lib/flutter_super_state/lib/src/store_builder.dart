@@ -40,7 +40,7 @@ class StoreBuilder extends StatefulWidget {
   final Function(Store)? onInit;
 
   const StoreBuilder({
-    Key? key,
+    super.key,
     this.builder,
     this.childBuilder,
     this.child,
@@ -48,8 +48,7 @@ class StoreBuilder extends StatefulWidget {
   })  : assert(
   childBuilder != null || builder != null,
   "builder or childBuilder must be set",
-  ),
-        super(key: key);
+  );
 
 
 

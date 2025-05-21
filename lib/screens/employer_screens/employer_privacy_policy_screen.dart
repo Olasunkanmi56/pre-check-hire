@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class EmployerPrivacyPolicyScreen extends StatelessWidget {
-  const EmployerPrivacyPolicyScreen({Key? key}) : super(key: key);
+  const EmployerPrivacyPolicyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

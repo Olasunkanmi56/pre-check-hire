@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:precheck_hire/screens/blacklist_screens/blacklist_candidate_profile_screen.dart';
-import 'package:precheck_hire/screens/blacklist_screens/blacklist_filter.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_filter.dart';
 import 'package:precheck_hire/widget/worker_profile_card.dart';
 

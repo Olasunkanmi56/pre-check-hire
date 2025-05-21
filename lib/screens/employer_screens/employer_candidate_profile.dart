@@ -3,9 +3,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_recommend_success.dart';
 import 'package:precheck_hire/screens/employer_screens/employer_success_blacklist.dart';
+import 'package:precheck_hire/store/modules/miscellaneous.module.dart';
 
 class EmployerCandidateProfileScreen extends StatefulWidget {
-  const EmployerCandidateProfileScreen({super.key});
+  final int candidateId;
+  const EmployerCandidateProfileScreen({super.key, required this.candidateId});
 
   @override
   State<EmployerCandidateProfileScreen> createState() =>
@@ -14,14 +16,39 @@ class EmployerCandidateProfileScreen extends StatefulWidget {
 
 class _EmployerCandidateProfileScreenState
     extends State<EmployerCandidateProfileScreen> {
+  Map<String, dynamic>? candidateDetails;
+  bool isLoading = true;
   bool isOverviewTab = true;
-
   final TextEditingController _blacklistCommentController =
       TextEditingController();
   final TextEditingController _recommendRelationshipController =
       TextEditingController();
   final TextEditingController _recommendCommentController =
       TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCandidateDetails();
+  }
+
+  Future<void> _fetchCandidateDetails() async {
+    try {
+      final data = await MiscellaneousModule().getCandidateDetails(
+        widget.candidateId,
+      );
+
+      setState(() {
+        candidateDetails = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching candidate: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -256,7 +283,7 @@ class _EmployerCandidateProfileScreenState
     );
   }
 
-  Widget _infoItem(String title, String value, String svgPath) {
+  Widget _infoItem(String title, Widget valueWidget, String svgPath) {
     return Padding(
       padding: EdgeInsets.only(bottom: 16.h),
       child: Row(
@@ -274,7 +301,7 @@ class _EmployerCandidateProfileScreenState
                   ),
                 ),
                 SizedBox(height: 4.h),
-                Text(value, style: TextStyle(fontSize: 13.sp)),
+                valueWidget, // Use widget directly
               ],
             ),
           ),
@@ -282,7 +309,7 @@ class _EmployerCandidateProfileScreenState
             svgPath,
             width: 18.sp,
             height: 18.sp,
-            color: Colors.black38, // optional
+            color: Colors.black38,
           ),
         ],
       ),
@@ -317,6 +344,7 @@ class _EmployerCandidateProfileScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -367,14 +395,20 @@ class _EmployerCandidateProfileScreenState
                         ),
                         child: CircleAvatar(
                           radius: 40.r,
-                          backgroundImage: AssetImage(
-                            "assets/images/home/chisom.png",
-                          ),
+                          backgroundImage:
+                              candidateDetails!['backgroundImage'] != null
+                                  ? NetworkImage(
+                                    candidateDetails!['backgroundImage'],
+                                  )
+                                  : const AssetImage(
+                                        "assets/images/default_profile.png",
+                                      )
+                                      as ImageProvider,
                         ),
                       ),
                       SizedBox(height: 10.h),
                       Text(
-                        "Quadri Fashola",
+                        "${candidateDetails!['firstName']} ${candidateDetails!['lastName']}",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16.sp,
@@ -382,7 +416,8 @@ class _EmployerCandidateProfileScreenState
                       ),
                       SizedBox(height: 4.h),
                       Text(
-                        "Domestic category not available",
+                        candidateDetails!['category'] ??
+                            "Domestic category not available",
                         style: TextStyle(
                           color: Colors.black54,
                           fontSize: 12.sp,
@@ -490,13 +525,39 @@ class _EmployerCandidateProfileScreenState
                             ),
                             Divider(),
                             _infoItem(
-                              "Categories",
-                              "Not specified",
+                              "DomesticCategories",
+                              Wrap(
+                                spacing: 8.w,
+                                children:
+                                    candidateDetails?['DomesticCategories']
+                                        .map<Widget>(
+                                          (cat) =>
+                                              Chip(label: Text(cat['name'])),
+                                        )
+                                        .toList(),
+                              ),
                               "assets/icons/p5.svg",
                             ),
                             _infoItem(
                               "Experiences",
-                              "6 years",
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children:
+                                    candidateDetails?['experience']
+                                        .map<Widget>(
+                                          (exp) => Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: 6.h,
+                                            ),
+                                            child: Text(
+                                              exp['company'] ??
+                                                  'No company provided',
+                                              style: TextStyle(fontSize: 13.sp),
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                              ),
                               "assets/icons/p6.svg",
                             ),
                           ],
@@ -506,19 +567,65 @@ class _EmployerCandidateProfileScreenState
                           children: [
                             _infoItem(
                               "About",
-                              "Experienced professional cook",
+                               Text(candidateDetails?['about'] ?? "", style: TextStyle(fontSize: 13.sp)),
                               "assets/icons/p1.svg",
                             ),
                             Divider(),
                             _infoItem(
                               "Education",
-                              "No education information available",
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children:
+                                    candidateDetails?['education']
+                                        .map<Widget>(
+                                          (edu) => Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: 6.h,
+                                            ),
+                                            child: Text(
+                                              '${edu['degree']} (${edu['institution']})',
+                                              style: TextStyle(fontSize: 13.sp),
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                              ),
                               "assets/icons/p2.svg",
                             ),
+
                             Divider(),
                             _infoItem(
-                              "Recommendation",
-                              "Ada is a well disciplined and well behaved driver",
+                              "Reviews",
+                              candidateDetails?['reviews'].isEmpty
+                                  ? Text(
+                                    'No reviews yet.',
+                                    style: TextStyle(
+                                      fontSize: 13.sp,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  )
+                                  : Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children:
+                                        (candidateDetails?['reviews'] as List? ??
+                                                [])
+                                            .map<Widget>(
+                                              (review) => Padding(
+                                                padding: EdgeInsets.only(
+                                                  bottom: 6.h,
+                                                ),
+                                                child: Text(
+                                                  review['comment'] ??
+                                                      'No comment',
+                                                  style: TextStyle(
+                                                    fontSize: 13.sp,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                  ),
                               "assets/icons/p3.svg",
                             ),
                           ],

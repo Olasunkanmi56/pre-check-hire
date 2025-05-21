@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_domestic_jobs.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_employment.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_home.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_job_detail.dart';

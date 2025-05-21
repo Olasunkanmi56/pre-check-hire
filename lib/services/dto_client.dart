@@ -1,51 +1,50 @@
 import 'package:dio/dio.dart';
-import 'package:precheck_hire/dtos/login.dto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DioClient {
   static Dio? _dio;
 
+  // Initializes and returns Dio instance
   static Future<Dio> getInstance() async {
-    if (_dio == null) {
-      _dio = Dio(BaseOptions(
-        baseUrl: 'https://api-stack-api.onrender.com/api/v1',
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      ));
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
 
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? token = prefs.getString('access_token');
-      if (token != null) {
-        _dio!.options.headers["Authorization"] = "Bearer $token";
-      }
+    // Create Dio only once
+    _dio ??= Dio(BaseOptions(
+      baseUrl: 'https://api-stack-api.onrender.com/api/v1',
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 60),
+      sendTimeout: const Duration(seconds: 15),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    ));
+
+    // Always refresh the Authorization header
+    if (token != null) {
+      _dio!.options.headers['Authorization'] = 'Bearer $token';
+    } else {
+      _dio!.options.headers.remove('Authorization');
     }
+
+    // print('[DIO CLIENT] Auth Header: ${_dio!.options.headers['Authorization']}');
+
     return _dio!;
   }
-}
 
+  // Call this after login to update headers
+  static Future<void> refreshTokenHeader() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
 
-class AuthService {
-  Future<void> login(LoginDto loginDto) async {
-    final Dio _dio = await DioClient.getInstance();
-
-    try {
-      final response = await _dio.post(
-        '/users/login', // baseUrl already included in DioClient
-        data: loginDto.toJson(),
-      );
-
-      if (response.statusCode == 200) {
-        final token = response.data['token'];
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('access_token', token); 
+    if (_dio != null) {
+      if (token != null) {
+        _dio!.options.headers['Authorization'] = 'Bearer $token';
       } else {
-        throw Exception('Failed to login');
+        _dio!.options.headers.remove('Authorization');
       }
-    } on DioError catch (e) {
-      throw Exception('Login error: ${e.response?.data['message'] ?? e.message}');
+
+      print('[DIO CLIENT] Refreshed Auth Header: ${_dio!.options.headers['Authorization']}');
     }
   }
 }

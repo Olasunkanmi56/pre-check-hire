@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:precheck_hire/screens/splash_screen.dart';
+import 'package:precheck_hire/store/modules/user.module.dart';
+import 'package:provider/provider.dart';
+
+
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => AuthStore(),
+      child: const MyApp(),
+    ),
+  );
 }
 
+
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -3,11 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:precheck_hire/screens/employer_screens/employer_kyc_success.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_kyc_success.dart';
 
 class JobSeekerSubmitKYCScreen extends StatefulWidget {
-  const JobSeekerSubmitKYCScreen({Key? key}) : super(key: key);
+  const JobSeekerSubmitKYCScreen({super.key});
 
   @override
   State<JobSeekerSubmitKYCScreen> createState() =>

@@ -4,8 +4,10 @@ import 'package:flutter_svg/svg.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_account_manage.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_change_password.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_helpcenter.dart';
+import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_login.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_logout.dart';
 import 'package:precheck_hire/screens/jobseeker_screens/jobseeker_privacypolicy.dart';
+import 'package:precheck_hire/services/auth_service.dart';
 
 class JobSeekerProfileScreen extends StatelessWidget {
   const JobSeekerProfileScreen({super.key});
@@ -202,9 +204,30 @@ class JobSeekerProfileScreen extends StatelessWidget {
                       color: Colors.red,
                       iconColor: Colors.red,
                       onTap: () {
-                        JobSeekerLogoutModal(context, () {
-                          print("User logged out");
-                          // Navigator.pushReplacementNamed(context, '/login');
+                        // JobSeekerLogoutModal(context, () {
+                        //   print("User logged out");
+                        //   // Navigator.pushReplacementNamed(context, '/login');
+                        // });
+                        JobSeekerLogoutModal(context, () async {
+                          try {
+                            await AuthService().logout();
+
+                            // Navigate to login screen directly and clear navigation stack
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (_) => JobSeekerLoginScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Logout failed. Please try again.',
+                                ),
+                              ),
+                            );
+                          }
                         });
                       },
                     ),
@@ -268,9 +291,9 @@ class JobSeekerProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDivider() {
-    return Container(height: 40.h, width: 1.w, color: Colors.grey.shade300);
-  }
+  // Widget _buildDivider() {
+  //   return Container(height: 40.h, width: 1.w, color: Colors.grey.shade300);
+  // }
 
   Widget _optionTile(
     String title,

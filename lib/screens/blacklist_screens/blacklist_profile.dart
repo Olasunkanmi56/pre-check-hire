@@ -3,10 +3,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:precheck_hire/screens/blacklist_screens/blacklist_acount_manage.dart';
 import 'package:precheck_hire/screens/blacklist_screens/blacklist_helpcenter.dart';
 import 'package:precheck_hire/screens/blacklist_screens/blacklist_kyc_verification.dart';
+import 'package:precheck_hire/screens/blacklist_screens/blacklist_login.dart';
 import 'package:precheck_hire/screens/blacklist_screens/blacklist_logout.dart';
 import 'package:precheck_hire/screens/blacklist_screens/blacklist_notification.dart';
 import 'package:precheck_hire/screens/blacklist_screens/blacklist_privacypolicy.dart';
 import 'package:precheck_hire/screens/blacklist_screens/blackllist_security.dart';
+import 'package:precheck_hire/services/auth_service.dart';
 
 class BlacklistProfileScreen extends StatelessWidget {
   const BlacklistProfileScreen({super.key});
@@ -228,9 +230,24 @@ class BlacklistProfileScreen extends StatelessWidget {
                       color: Colors.red,
                       iconColor: Colors.red,
                       onTap: () {
-                        showBlacklistLogoutModal(context, () {
-                          print("User logged out");
-                          // Navigator.pushReplacementNamed(context, '/login');
+                        showBlacklistLogoutModal(context, () async {
+                          try {
+                            await AuthService().logout();
+
+                            // Navigate to login screen directly and clear navigation stack
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (_) => BlacklistLoginScreen()),
+                              (route) => false,
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Logout failed. Please try again.',
+                                ),
+                              ),
+                            );
+                          }
                         });
                       },
                     ),
